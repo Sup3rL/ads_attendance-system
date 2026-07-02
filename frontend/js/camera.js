@@ -1,4 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
+    console.log("Face API loaded: ", faceapi);
+    
     const video = document.getElementById('videoElement');
     const endSessionBtn = document.getElementById('endSessionBtn');
 
