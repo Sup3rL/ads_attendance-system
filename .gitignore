@@ -1,0 +1,14 @@
+# Compiled Go binaries
+attendance-system
+*.exe
+*.test
+*.out
+
+# Environment variables (Database credentials, etc.)
+.env
+
+# Editor settings
+.vscode/
+
+# OS generated files
+.DS_Store
