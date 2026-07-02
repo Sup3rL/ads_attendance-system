@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register Student | Face Recognition Attendance</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="container camera-container">
+        <div class="card">
+            <h1>Register New Student</h1>
+            <p class="subtitle">Enter details and capture face</p>
+            
+            <form id="registerForm">
+                <div class="form-group">
+                    <label for="nim">Student ID (NIM)</label>
+                    <input type="text" id="nim" required autocomplete="off" placeholder="e.g., 111222333">
+                </div>
+                
+                <div class="form-group">
+                    <label for="name">Full Name</label>
+                    <input type="text" id="name" required autocomplete="off" placeholder="e.g., Jane Doe">
+                </div>
+                
+                <div class="video-wrapper" style="margin-bottom: 20px;">
+                    <video id="videoElement" autoplay muted></video>
+                </div>
+                
+                <div id="statusMessage" class="status-waiting">
+                    Loading AI Models...
+                </div>
+                
+                <button type="button" id="captureBtn" class="btn-primary" disabled>
+                    Capture & Register Face
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script src="/js/face-api.min.js"></script>
+    <script src="/js/register.js"></script>
+</body>
+</html>
