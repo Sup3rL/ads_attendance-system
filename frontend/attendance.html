@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Active Session | Face Recognition Attendance</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="container camera-container">
+        <div class="card">
+            <h1>Active Attendance Session</h1>
+            <p class="subtitle">Please stand in front of the camera</p>
+            
+            <div class="video-wrapper">
+                <video id="videoElement" autoplay muted></video>
+            </div>
+            
+            <div id="statusMessage" class="status-waiting">
+                Waiting for face...
+            </div>
+            
+            <button id="endSessionBtn" class="btn-primary" style="background-color: var(--error-color); margin-top: 20px;">
+                End Session
+            </button>
+        </div>
+    </div>
+
+    <script src="/js/camera.js"></script>
+</body>
+</html>
