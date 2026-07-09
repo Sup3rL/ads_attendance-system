@@ -14,6 +14,12 @@ func SetupRoutes() *mux.Router {
 	api := r.PathPrefix("/api").Subrouter()
 	api.HandleFunc("/health", handlers.HealthCheck).Methods("GET")
 
+	api.HandleFunc("/students/register", handlers.RegisterStudent).Methods("POST")
+
+	api.HandleFunc("/attendance/scan", handlers.RecognizeFace).Methods("POST")
+
+	// Add this to your SetupRoutes function in backend/routes/routes.go
+	api.HandleFunc("/attendance/record", handlers.RecordAttendance).Methods("POST")
 	// --- NEW CODE: Serve Frontend Static Files ---
 	// This tells Go: "If a request doesn't start with /api, look in the /frontend folder for matching files."
 	staticDir := "./frontend"

@@ -40,12 +40,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // 3. Capture Face and Generate Descriptor
     captureBtn.addEventListener('click', async () => {
         const nim = nimInput.value.trim();
         const name = nameInput.value.trim();
 
-        // Basic validation
         if (!nim || !name) {
             alert("Please enter both NIM and Name before capturing.");
             return;
@@ -56,9 +54,9 @@ document.addEventListener('DOMContentLoaded', () => {
         captureBtn.disabled = true;
 
         try {
-            // THE CORE AI LOGIC: 
-            // Detect one face -> find landmarks -> generate descriptor
-            const detection = await faceapi.detectSingleFace(video).withFaceLandmarks().withFaceDescriptor();
+            // 1. Detect face
+            const options = new faceapi.SsdMobilenetv1Options({ minConfidence: 0.35 });
+            const detection = await faceapi.detectSingleFace(video, options).withFaceLandmarks().withFaceDescriptor();
 
             if (!detection) {
                 statusMessage.innerText = "No face detected. Try again.";
@@ -67,21 +65,39 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            // The descriptor is a Float32Array. We convert it to a standard JavaScript Array 
-            // so we can eventually turn it into JSON to send to our Go backend.
+            // 2. Define descriptorArray IN THE SAME SCOPE as the fetch
             const descriptorArray = Array.from(detection.descriptor);
 
-            console.log("Student Data:", { nim, name });
-            console.log("Generated Descriptor (128 values):", descriptorArray);
+            statusMessage.innerText = "Saving to database... Please wait.";
+            statusMessage.className = "status-waiting";
 
-            statusMessage.innerText = "Face captured successfully! (Check Console)";
-            statusMessage.className = "status-success";
-            
-            // In Milestone 16, we will replace the console.log with a fetch() request to Go.
+            // 3. Now fetch() can see descriptorArray
+            const response = await fetch('/api/students/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    nim: nim,
+                    name: name,
+                    descriptor: descriptorArray
+                })
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                statusMessage.innerText = result.message;
+                statusMessage.className = "status-success";
+                nimInput.value = '';
+                nameInput.value = '';
+            } else {
+                statusMessage.innerText = "Error: " + result.error;
+                statusMessage.style.color = "var(--error-color)";
+            }
 
         } catch (error) {
             console.error("Error during face capture:", error);
-            statusMessage.innerText = "An error occurred during capture.";
+            statusMessage.innerText = "An error occurred. Check console.";
+        } finally {
             captureBtn.disabled = false;
         }
     });

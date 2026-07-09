@@ -3,63 +3,84 @@ document.addEventListener('DOMContentLoaded', async () => {
     const endSessionBtn = document.getElementById('endSessionBtn');
     const statusMessage = document.getElementById('statusMessage');
 
-    // 1. Define where the browser should look for the downloaded models
     const MODEL_URL = '/models';
 
-    // 2. Load the AI Models asynchronously
+    // 1. Load Models
     async function loadModels() {
-        statusMessage.innerText = "Loading AI Models into memory... Please wait.";
-        console.log("Starting model load...");
-
+        statusMessage.innerText = "Loading AI Models into memory...";
         try {
-            // Promise.all ensures we wait until ALL three models finish loading
             await Promise.all([
                 faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL),
                 faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
                 faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
             ]);
-            
-            console.log("All face-api models loaded successfully!");
-            statusMessage.innerText = "Models Loaded. Starting Camera...";
-            
-            // Only start the video after models are fully ready
             startVideo();
         } catch (error) {
             console.error("Error loading models:", error);
-            statusMessage.innerText = "Error loading AI models. Check console.";
-            statusMessage.style.color = "var(--error-color)";
+            statusMessage.innerText = "Error loading AI models.";
         }
     }
 
-    // 3. Start the Webcam
+    // 2. Start Camera
     async function startVideo() {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ video: true });
             video.srcObject = stream;
             
-            // Wait for the video element to actually start playing before we do face detection
             video.addEventListener('play', () => {
-                statusMessage.innerText = "System Ready. Waiting for face...";
-                statusMessage.className = "status-success"; // Turn text green
+                statusMessage.innerText = "System Ready. Searching for face...";
+                statusMessage.className = "status-success";
+
+                // 3. Recognition Loop
+                setInterval(async () => {
+                    // Lowering threshold to 0.35 to help with lighting issues
+                    const options = new faceapi.SsdMobilenetv1Options({ minConfidence: 0.35 });
+                    const detection = await faceapi.detectSingleFace(video, options).withFaceLandmarks().withFaceDescriptor();
+                    
+                    if (detection) {
+                        console.log("Face detected! Sending to backend...");
+                        const response = await fetch('/api/attendance/scan', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ descriptor: Array.from(detection.descriptor) })
+                        });
+                        
+                        const result = await response.json();
+                        if (result.match) {
+                            statusMessage.innerText = "Match Found! Recording attendance...";
+                            
+                            // Call the new record endpoint
+                            await fetch('/api/attendance/record', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ student_id: result.student_id })
+                            });
+                            
+                            statusMessage.innerText = "Attendance Recorded for Student ID: " + result.student_id;
+                        }else {
+                            statusMessage.innerText = "Face recognized, but not registered.";
+                            console.log("❌ Face recognized, but NO match in database.");
+                        }
+                    } else {
+                        console.log("... Searching for face ...");
+                    }
+                }, 2000); // Scan every 2 seconds
             });
 
         } catch (err) {
-            console.error("Error accessing the webcam: ", err);
+            console.error("Error accessing webcam:", err);
             statusMessage.innerText = "Webcam access denied.";
         }
     }
 
-    // Stop the camera when the session ends
+    // Stop camera
     endSessionBtn.addEventListener('click', () => {
         const stream = video.srcObject;
         if (stream) {
-            const tracks = stream.getTracks();
-            tracks.forEach(track => track.stop());
+            stream.getTracks().forEach(track => track.stop());
         }
         statusMessage.innerText = "Session Ended.";
-        statusMessage.className = "status-waiting";
     });
 
-    // Start the process by loading models first
     loadModels();
 });
